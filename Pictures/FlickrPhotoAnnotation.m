@@ -7,6 +7,7 @@
 //
 
 #import "FlickrPhotoAnnotation.h"
+#import "FlickrFetcher.h"
 
 @implementation FlickrPhotoAnnotation
 
@@ -22,19 +23,19 @@
 #pragma mark MKAnnotation delegate methods
 - (NSString *)title
 {
-    return [self.photo objectForKey:@"title"];
+    return [self.photo objectForKey:FLICKR_PHOTO_TITLE];
 }
 
 - (NSString *)subtitle
 {
-    return [self.photo objectForKey:@"description._content"];
+    return [self.photo objectForKey:FLICKR_PHOTO_DESCRIPTION];
 }
 
 - (CLLocationCoordinate2D)coordinate
 {
     CLLocationCoordinate2D coordinate;
-    coordinate.latitude = [[self.photo objectForKey:@"latitude"] doubleValue];
-    coordinate.longitude = [[self.photo objectForKey:@"longitude"] doubleValue];
+    coordinate.latitude = [[self.photo objectForKey:FLICKR_LATITUDE] doubleValue];
+    coordinate.longitude = [[self.photo objectForKey:FLICKR_LONGITUDE] doubleValue];
     return coordinate;
 
 }

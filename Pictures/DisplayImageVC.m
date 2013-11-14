@@ -8,76 +8,95 @@
 
 #import "DisplayImageVC.h"
 #import "FlickrFetcher.h"
+#import "Vacation+Create.h"
+#import "Photo+Create.h"
+#import "VacationHelper.h"
 
 @interface DisplayImageVC ()
+
+@property (nonatomic) BOOL visited;  //TODO make setter actually do a query
+@property (strong, nonatomic) IBOutlet UIBarButtonItem *visitButton;
+@property (strong, nonatomic) UIManagedDocument *vacationDocument;
 
 @end
 
 @implementation DisplayImageVC
 
-@synthesize imageView = _imageView;
-@synthesize scrollView = _scrollView;
 @synthesize photo = _photo;
-@synthesize image = _image;
+@synthesize visited = _visited;
+@synthesize vacationDocument = _vacationDocument;
 
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+- (void)viewDidAppear:(BOOL)animated
 {
-    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    if (self) {
-        // Custom initialization
-    }
-    return self;
+    [super viewDidAppear:animated];
+    [[Cacher sharedInstance] saveToUserDefaults:self.photo];
+
 }
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    self.scrollView.zoomScale = 1;
-    self.imageView.image = self.image;
-    self.scrollView.delegate = self;
-    self.scrollView.contentSize = self.imageView.image.size;
-    self.imageView.frame = CGRectMake(0, 0, self.imageView.image.size.width, self.imageView.image.size.height);
+    self.visited = NO;
+        [VacationHelper openVacation:@"My Vacation" usingBlock:^(UIManagedDocument *vacationDoc) {
+
+            NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Photo"];
+            request.sortDescriptors = [NSArray arrayWithObject:[NSSortDescriptor sortDescriptorWithKey:@"title" ascending:YES selector:nil]];
+            request.predicate = [NSPredicate predicateWithFormat:@"vacation.title == %@", @"My Vacation"];
+            NSError *error;
+            NSArray *photos = [vacationDoc.managedObjectContext executeFetchRequest:request error:&error];
+            for (Photo *photo in photos) {
+                if ([photo.uniqueId isEqualToString:[self.photo objectForKey:FLICKR_PHOTO_ID]]) {
+                    self.visited = YES;
+                    [self.visitButton setTitle:@"Unvisit"];
+            
+                }
+            }
+        }];
 }
 
-- (void)viewDidAppear:(BOOL)animated
+- (IBAction)visitPressed:(UIBarButtonItem *)sender
 {
-    [super viewDidAppear:animated];
-    
-    CGSize imageSize = self.imageView.image.size;
-    CGSize frameSize = self.scrollView.bounds.size;
-    BOOL isWide = imageSize.width >= imageSize.height;
-    CGFloat otherValue = !isWide ? (imageSize.width * frameSize.height / frameSize.width) : (imageSize.height * frameSize.width / frameSize.height);
-    CGRect destination = ! isWide ? CGRectMake(0.0, 0.0, imageSize.width, otherValue) : CGRectMake(0.0, 0.0, otherValue, imageSize.height);
-    
-    [self.scrollView zoomToRect:destination animated:NO];
-    
-    [self.scrollView flashScrollIndicators];
-    [[Cacher sharedInstance] saveToUserDefaults:self.photo];
-    
-    [[Cacher sharedInstance] cacheImage:self.image forPhoto:self.photo];
-}
-
-- (UIView *)viewForZoomingInScrollView:(UIScrollView *)scrollView
-{
-    return self.imageView;
-}
-
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-    // Return YES for supported orientations
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-        return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
-    } else {
-        return YES;
+    if (!self.visited) {
+        self.visited = true;
+        [sender setTitle:@"Unvisit"];
+        [VacationHelper openVacation:@"My Vacation" usingBlock:^(UIManagedDocument *vacationDoc){
+            self.vacationDocument = vacationDoc;
+            [self addToVacation];
+        }];
+        
+    }
+    else {
+        self.visited = false;
+        [sender setTitle:@"Visit"];
+        //remove photo from vacation- have to do a whole freaking fetch request
+        NSError *error;
+        NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Photo"];
+        request.predicate = [NSPredicate predicateWithFormat:@"uniqueId == %@", [self.photo objectForKey:FLICKR_PHOTO_ID]];
+        NSArray *fetchedObjects = [self.vacationDocument.managedObjectContext executeFetchRequest:request error:&error];
+        
+        for (NSManagedObject *product in fetchedObjects) {
+            [self.vacationDocument.managedObjectContext deleteObject:product];
+        }
     }
 }
 
-- (void)viewDidUnload
+- (void)addToVacation
 {
-    [self setImageView:nil];
-    [self setScrollView:nil];
-    [super viewDidUnload];
+    NSError *error;
+    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Vacation"];
+    request.predicate = [NSPredicate predicateWithFormat:@"title == %@", @"My Vacation"];
+    NSArray *fetchedObjects = [self.vacationDocument.managedObjectContext executeFetchRequest:request error:&error];
+    
+    Vacation *vacation = [fetchedObjects lastObject];
+    
+    [Photo photoWithPhoto:self.photo inVacation:vacation inManagedObectContext:self.vacationDocument.managedObjectContext];
+    [self.vacationDocument saveToURL:self.vacationDocument.fileURL forSaveOperation:UIDocumentSaveForOverwriting completionHandler:^(BOOL success) {
+        if (success) {
+            NSLog(@"it saved");
+        }
+    }];
 }
+
 
 
 @end

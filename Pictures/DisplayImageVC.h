@@ -9,12 +9,11 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import "Cacher.h"
+#import "DisplayImageBasicVC.h"
 
-@interface DisplayImageVC : UIViewController <UIScrollViewDelegate>
-@property (weak, nonatomic) IBOutlet UIImageView *imageView;
+@interface DisplayImageVC : DisplayImageBasicVC
+@property (strong, nonatomic) IBOutlet UIImageView *imageView;
 
-@property (weak, nonatomic) IBOutlet UIScrollView *scrollView;
 @property (strong, nonatomic) NSDictionary *photo;
-@property (strong, nonatomic) UIImage *image;
 
 @end

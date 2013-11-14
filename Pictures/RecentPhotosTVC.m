@@ -73,7 +73,7 @@
     if (recents && recentsOrder) {
         NSString *key = [recentsOrder objectAtIndex:indexPath.row];
         NSDictionary *photo = [recents objectForKey:key];
-        cell.textLabel.text = [photo objectForKey:@"title"];
+        cell.textLabel.text = [photo objectForKey:FLICKR_PHOTO_TITLE];
         cell.detailTextLabel.text = key;
     }
     return cell;
@@ -89,45 +89,6 @@
 
     }
 }
-
-/*
-// Override to support conditional editing of the table view.
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the specified item to be editable.
-    return YES;
-}
-*/
-
-/*
-// Override to support editing the table view.
-- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    if (editingStyle == UITableViewCellEditingStyleDelete) {
-        // Delete the row from the data source
-        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-    }   
-    else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-    }   
-}
-*/
-
-/*
-// Override to support rearranging the table view.
-- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
-{
-}
-*/
-
-/*
-// Override to support conditional rearranging of the table view.
-- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the item to be re-orderable.
-    return YES;
-}
-*/
 
 #pragma mark - Table view delegate
 
@@ -146,7 +107,7 @@
 
     dispatch_queue_t loadingQueue = dispatch_queue_create("loading", NULL);
     dispatch_async(loadingQueue, ^{
-        UIImage *image = [[Cacher sharedInstance] getImageForPhoto:self.selectedPhoto];
+        UIImage *image = [[Cacher sharedInstance] getImageForPhotoId:[self.selectedPhoto objectForKey:FLICKR_PHOTO_ID]];
         if (!image) {
             NSURL *url = [FlickrFetcher urlForPhoto:photo format:FlickrPhotoFormatLarge];
             image = [UIImage imageWithData:[NSData dataWithContentsOfURL:url]];

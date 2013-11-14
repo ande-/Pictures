@@ -8,6 +8,7 @@
 
 #import "PlaceAnnotation.h"
 #import <MapKit/MapKit.h>
+#import "FlickrFetcher.h"
 
 @implementation PlaceAnnotation
 
@@ -28,7 +29,7 @@
 
 - (NSString *)subtitle
 {
-    NSString *fullLocation = [self.place objectForKey:@"_content"];
+    NSString *fullLocation = [self.place objectForKey:FLICKR_PLACE_NAME];
     NSString *city = [self.place objectForKey:@"woe_name"];
     return [fullLocation stringByReplacingOccurrencesOfString:[NSString stringWithFormat:@"%@, ", city] withString:@""];
 }
@@ -36,8 +37,8 @@
 - (CLLocationCoordinate2D)coordinate
 {
     CLLocationCoordinate2D coordinate;
-    coordinate.latitude = [[self.place objectForKey:@"latitude"] doubleValue];
-    coordinate.longitude = [[self.place objectForKey:@"longitude"] doubleValue];
+    coordinate.latitude = [[self.place objectForKey:FLICKR_LATITUDE] doubleValue];
+    coordinate.longitude = [[self.place objectForKey:FLICKR_LONGITUDE] doubleValue];
     return coordinate;
     
 }

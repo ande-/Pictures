@@ -25,36 +25,11 @@
 @synthesize selectedImage = _selectedImage;
 @synthesize selectedPhoto = _selectedPhoto;
 
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
-{
-    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    if (self) {
-        // Custom initialization
-    }
-    return self;
-}
-
-- (void)viewDidLoad
-{
-    // Uncomment the following line to preserve selection between presentations.
-    // self.clearsSelectionOnViewWillAppear = NO;
- 
-    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
-}
-
-- (void)didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
-
 #pragma mark - Table view data source
 
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    // Return the number of rows in the section.
     return 50;
 }
 
@@ -65,8 +40,8 @@
     
     // Configure the cell...
     NSDictionary *photo = [self.top50 objectAtIndex:indexPath.row];
-    NSString *title = [photo valueForKey:@"title"];
-    NSString *description = [photo valueForKey:@"description._content"];
+    NSString *title = [photo valueForKey:FLICKR_PHOTO_TITLE];
+    NSString *description = [photo valueForKey:FLICKR_PHOTO_DESCRIPTION];
     cell.textLabel.text = title ? title : @"unknown";
     cell.detailTextLabel.text = description ? description : @"no description";
     
@@ -104,14 +79,14 @@
 {
     FlickrPhotoAnnotation *annot = (FlickrPhotoAnnotation *)annotation;
     NSDictionary *photo = annot.photo;
-    UIImage *image = [[Cacher sharedInstance] getImageForPhoto:photo];
+    UIImage *image = [[Cacher sharedInstance] getImageForPhotoId:[photo objectForKey:FLICKR_PHOTO_ID]];
     if (!image) {
         NSURL *url = [FlickrFetcher urlForPhoto:photo format:FlickrPhotoFormatSquare];
         NSData *data = [NSData dataWithContentsOfURL:url];
         image = [UIImage imageWithData:data];
         NSLog(@"loading callout image");
     }
-    [[Cacher sharedInstance] cacheImage:image forPhoto:photo];
+    [[Cacher sharedInstance] cacheImage:image forPhotoId:[photo valueForKey:FLICKR_PHOTO_ID]];
     return image;
 }
 
@@ -122,45 +97,6 @@
     [button setTitle:@"i" forState:UIControlStateNormal];
     return button;
 }
-
-/*
-// Override to support conditional editing of the table view.
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the specified item to be editable.
-    return YES;
-}
-*/
-
-/*
-// Override to support editing the table view.
-- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    if (editingStyle == UITableViewCellEditingStyleDelete) {
-        // Delete the row from the data source
-        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-    }   
-    else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-    }   
-}
-*/
-
-/*
-// Override to support rearranging the table view.
-- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
-{
-}
-*/
-
-/*
-// Override to support conditional rearranging of the table view.
-- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the item to be re-orderable.
-    return YES;
-}
-*/
 
 #pragma mark - Table view delegate
 
@@ -174,11 +110,13 @@
     self.selectedPhoto = photo;
     dispatch_queue_t loadingQueue = dispatch_queue_create("loading", NULL);
     dispatch_async(loadingQueue, ^{
-        UIImage *image = [[Cacher sharedInstance] getImageForPhoto:self.selectedPhoto];
+        UIImage *image = [[Cacher sharedInstance] getImageForPhotoId:[self.selectedPhoto objectForKey:FLICKR_PHOTO_ID]];
         if (!image) {
             NSLog(@"loading image");
             NSURL *url = [FlickrFetcher urlForPhoto:photo format:FlickrPhotoFormatLarge];
             image = [UIImage imageWithData:[NSData dataWithContentsOfURL:url]];
+            [[Cacher sharedInstance] cacheImage:image forPhotoId:[self.selectedPhoto valueForKey:FLICKR_PHOTO_ID]];
+
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             self.selectedImage = image;
